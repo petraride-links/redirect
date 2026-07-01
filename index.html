@@ -121,15 +121,25 @@
             var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
             var isAndroid = /android/i.test(ua);
 
-            // Redirect — delayed slightly (500ms) so the Meta Pixel PageView
-            // event has time to fire before the browser navigates away.
+            // Redirect — delayed slightly (500ms) so the Meta Pixel events
+            // have time to fire before the browser navigates away.
             var REDIRECT_DELAY_MS = 500;
 
             if (isAndroid) {
+                // Fire the Lead event immediately (Android store redirect)
+                fbq('track', 'Lead', {
+                    content_name: 'android_store_redirect',
+                    campaign: campaign
+                });
                 setTimeout(function () {
                     window.location.replace(androidURL);
                 }, REDIRECT_DELAY_MS);
             } else if (isIOS) {
+                // Fire the Lead event immediately (iOS store redirect)
+                fbq('track', 'Lead', {
+                    content_name: 'ios_store_redirect',
+                    campaign: campaign
+                });
                 setTimeout(function () {
                     window.location.replace(iosURL);
                 }, REDIRECT_DELAY_MS);
