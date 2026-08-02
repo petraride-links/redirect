@@ -61,7 +61,7 @@
             border-radius: 10px;
             font-size: 13px;
             opacity: 0.8;
-            line-height: 1.6;
+            line-height: 1.8;
             display: none;
         }
     </style>
@@ -72,16 +72,20 @@
         <div class="tagline">منكم وفيكم</div>
         <div class="subtitle">حمّل التطبيق</div>
 
-        <a id="ios-link" class="store-btn" href="itms-apps://apps.apple.com/app/id1463809354">
+        <a class="store-btn" id="ios-link"
+           href="https://apps.apple.com/app/id1463809354">
             App Store حمّل من
         </a>
 
-        <a id="android-link" class="store-btn" href="market://details?id=com.PetraRide_User">
+        <a class="store-btn" id="android-link"
+           href="https://play.google.com/store/apps/details?id=com.PetraRide_User">
             Google Play حمّل من
         </a>
 
         <div id="help" class="help-text">
-            مش عم يفتح؟ اضغط على ⋯ فوق يمين ثم "افتح في المتصفح"
+            مش عم يفتح المتجر؟<br>
+            اضغط على ⋯ فوق يمين الشاشة<br>
+            ثم اختر "فتح في المتصفح"
         </div>
     </div>
 
@@ -90,25 +94,50 @@
         try {
             var params = new URLSearchParams(window.location.search);
             var campaign = params.get('c') || 'general';
+            var ce = encodeURIComponent(campaign);
 
-            // Update iOS link with campaign param
-            document.getElementById('ios-link').href =
-                'itms-apps://apps.apple.com/app/id1463809354?ct=' + encodeURIComponent(campaign);
+            var iosHTTPS = 'https://apps.apple.com/app/id1463809354?ct=' + ce;
+            var androidHTTPS = 'https://play.google.com/store/apps/details?id=com.PetraRide_User'
+                + '&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
 
-            // Update Android link with campaign param
-            document.getElementById('android-link').href =
-                'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D'
-                + encodeURIComponent(campaign);
+            var iosEl = document.getElementById('ios-link');
+            var androidEl = document.getElementById('android-link');
 
-            // Fire lead event
-            if (typeof fbq === 'function') {
-                fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
+            iosEl.href = iosHTTPS;
+            androidEl.href = androidHTTPS;
+
+            // On mobile: try native scheme on click, fallback stays as HTTPS href
+            var ua = navigator.userAgent || '';
+            var isIOS = /iPad|iPhone|iPod/.test(ua);
+            var isAndroid = /android/i.test(ua);
+            var isInApp = /FBAN|FBAV|Instagram|Messenger/i.test(ua);
+
+            if (isIOS) {
+                iosEl.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Try native scheme first
+                    window.location.href = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + ce;
+                    // If still here after 1s, try HTTPS
+                    setTimeout(function() { window.location.href = iosHTTPS; }, 1000);
+                });
             }
 
-            // Show help text if in-app browser detected
-            var ua = navigator.userAgent || '';
-            if (/FBAN|FBAV|Instagram|Messenger/i.test(ua)) {
+            if (isAndroid) {
+                androidEl.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
+                    setTimeout(function() { window.location.href = androidHTTPS; }, 1000);
+                });
+            }
+
+            // Show help text in in-app browsers
+            if (isInApp) {
                 document.getElementById('help').style.display = 'block';
+            }
+
+            // Fire pixel
+            if (typeof fbq === 'function') {
+                fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
             }
         } catch(e) {}
     })();
