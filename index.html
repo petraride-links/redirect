@@ -66,45 +66,61 @@
             opacity: 0.75;
             margin-bottom: 32px;
         }
-        .fallback {
-            display: none;
-            margin-top: 16px;
-        }
-        .fallback a {
+        .store-btn {
             display: block;
-            padding: 14px 24px;
-            margin: 10px 0;
-            border-radius: 12px;
+            padding: 16px 24px;
+            margin: 12px 0;
+            border-radius: 14px;
             background: #fff;
             color: #0E37A6;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 700;
+            font-size: 16px;
             transition: opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
-        .fallback a:hover { opacity: 0.9; }
+        .store-btn:active { opacity: 0.85; }
+        .fallback {
+            margin-top: 16px;
+        }
+        .fallback-note {
+            font-size: 13px;
+            opacity: 0.6;
+            margin-top: 16px;
+        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo-text">PETRA RIDE</div>
         <div class="tagline">منكم وفيكم</div>
-        <div class="spinner" id="spinner"></div>
-        <div class="status" id="status">جاري التحويل...</div>
-        <div class="fallback" id="fallback">
-            <p style="margin-bottom: 12px; font-size: 14px;">اختر متجرك</p>
-            <a id="android-link" href="#">Google Play</a>
-            <a id="ios-link" href="#">App Store</a>
+
+        <!-- Phase 1: spinner while we try auto-redirect -->
+        <div id="phase-auto">
+            <div class="spinner" id="spinner"></div>
+            <div class="status" id="status">جاري التحويل...</div>
+        </div>
+
+        <!-- Phase 2: explicit button (shown on mobile if auto-redirect blocked) -->
+        <div id="phase-button" class="hidden">
+            <a id="store-btn" class="store-btn" href="#">حمّل التطبيق</a>
+            <div class="fallback-note">اضغط الزر للتحويل للمتجر</div>
+        </div>
+
+        <!-- Phase 3: both buttons (desktop or unknown) -->
+        <div id="phase-both" class="hidden">
+            <p style="margin-bottom: 12px; font-size: 14px;">حمّل التطبيق</p>
+            <a id="android-link" class="store-btn" href="#">Google Play</a>
+            <a id="ios-link" class="store-btn" href="#">App Store</a>
         </div>
     </div>
 
     <script>
         (function() {
-            // Read campaign tag from URL: ?c=JO26
             var params = new URLSearchParams(window.location.search);
             var campaign = params.get('c') || 'general';
 
-            // Build store URLs with tracking
             var androidURL = 'https://play.google.com/store/apps/details?id=com.PetraRide_User'
                 + '&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D'
                 + encodeURIComponent(campaign);
@@ -112,50 +128,61 @@
             var iosURL = 'https://apps.apple.com/app/id1463809354?ct='
                 + encodeURIComponent(campaign);
 
-            // Set fallback links
             document.getElementById('android-link').href = androidURL;
             document.getElementById('ios-link').href = iosURL;
 
-            // Detect OS
             var ua = navigator.userAgent || navigator.vendor || window.opera;
             var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
             var isAndroid = /android/i.test(ua);
+            var isMobile = isIOS || isAndroid;
+            var storeURL = isIOS ? iosURL : androidURL;
+            var storeName = isIOS ? 'App Store' : 'Google Play';
 
-            // Redirect — delayed slightly (500ms) so the Meta Pixel events
-            // have time to fire before the browser navigates away.
-            var REDIRECT_DELAY_MS = 500;
+            // Detect in-app browser (Facebook, Instagram, etc.)
+            var isInApp = /FBAN|FBAV|Instagram|Messenger|Line|Snapchat/i.test(ua);
 
-            if (isAndroid) {
-                // Fire the Lead event immediately (Android store redirect)
-                fbq('track', 'Lead', {
-                    content_name: 'android_store_redirect',
-                    campaign: campaign
-                });
-                setTimeout(function () {
-                    window.location.replace(androidURL);
-                }, REDIRECT_DELAY_MS);
-            } else if (isIOS) {
-                // Fire the Lead event immediately (iOS store redirect)
-                fbq('track', 'Lead', {
-                    content_name: 'ios_store_redirect',
-                    campaign: campaign
-                });
-                setTimeout(function () {
-                    window.location.replace(iosURL);
-                }, REDIRECT_DELAY_MS);
-            } else {
-                // Desktop or unknown — show both buttons
-                document.getElementById('spinner').style.display = 'none';
-                document.getElementById('status').textContent = 'حمّل التطبيق';
-                document.getElementById('fallback').style.display = 'block';
+            function fireLeadEvent() {
+                if (typeof fbq === 'function') {
+                    fbq('track', 'Lead', {
+                        content_name: (isIOS ? 'ios' : 'android') + '_store_redirect',
+                        campaign: campaign
+                    });
+                }
             }
 
-            // If redirect didn't fire in 3 seconds, show fallback buttons
-            setTimeout(function() {
-                document.getElementById('spinner').style.display = 'none';
-                document.getElementById('status').textContent = 'حمّل التطبيق';
-                document.getElementById('fallback').style.display = 'block';
-            }, 3000);
+            if (isMobile) {
+                // Fire Lead event immediately
+                fireLeadEvent();
+
+                if (isInApp) {
+                    // In-app browser: skip auto-redirect, show button directly
+                    document.getElementById('phase-auto').classList.add('hidden');
+                    var btnEl = document.getElementById('store-btn');
+                    btnEl.textContent = 'حمّل من ' + storeName;
+                    btnEl.href = storeURL;
+                    btnEl.setAttribute('target', '_blank');
+                    btnEl.setAttribute('rel', 'noopener');
+                    document.getElementById('phase-button').classList.remove('hidden');
+                } else {
+                    // Normal mobile browser: try auto-redirect
+                    setTimeout(function() {
+                        window.location.href = storeURL;
+                    }, 400);
+
+                    // Fallback: if redirect didn't work after 2s, show button
+                    setTimeout(function() {
+                        document.getElementById('phase-auto').classList.add('hidden');
+                        var btnEl = document.getElementById('store-btn');
+                        btnEl.textContent = 'حمّل من ' + storeName;
+                        btnEl.href = storeURL;
+                        document.getElementById('phase-button').classList.remove('hidden');
+                    }, 2000);
+                }
+            } else {
+                // Desktop: show both buttons
+                document.getElementById('phase-auto').classList.add('hidden');
+                document.getElementById('phase-both').classList.remove('hidden');
+            }
         })();
     </script>
 </body>
