@@ -37,27 +37,9 @@
             padding: 24px;
         }
         .container { max-width: 360px; width: 100%; }
-        .logo-text {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        .tagline {
-            font-size: 16px;
-            opacity: 0.85;
-            margin-bottom: 32px;
-        }
-        .spinner {
-            width: 36px; height: 36px;
-            border: 3px solid rgba(255,255,255,0.25);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .status { font-size: 14px; opacity: 0.75; margin-bottom: 32px; }
+        .logo-text { font-size: 28px; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+        .tagline { font-size: 16px; opacity: 0.85; margin-bottom: 40px; }
+        .subtitle { font-size: 15px; opacity: 0.9; margin-bottom: 20px; }
         .store-btn {
             display: block;
             padding: 18px 24px;
@@ -69,161 +51,66 @@
             text-decoration: none;
             font-weight: 700;
             font-size: 17px;
-            cursor: pointer;
-            border: none;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
         }
         .store-btn:active { opacity: 0.85; }
-        .fallback-note { font-size: 13px; opacity: 0.6; margin-top: 12px; }
-        .open-browser {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 20px;
-            border: 2px solid rgba(255,255,255,0.5);
+        .help-text {
+            margin-top: 30px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 10px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            opacity: 0.8;
+            line-height: 1.6;
+            display: none;
         }
-        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo-text">PETRA RIDE</div>
         <div class="tagline">منكم وفيكم</div>
+        <div class="subtitle">حمّل التطبيق</div>
 
-        <!-- Phase 1: auto-redirect spinner -->
-        <div id="phase-auto">
-            <div class="spinner"></div>
-            <div class="status">جاري التحويل...</div>
-        </div>
+        <a id="ios-link" class="store-btn" href="itms-apps://apps.apple.com/app/id1463809354">
+            App Store حمّل من
+        </a>
 
-        <!-- Phase 2: button for in-app or fallback -->
-        <div id="phase-button" class="hidden">
-            <button id="store-btn" class="store-btn" type="button">حمّل التطبيق</button>
-            <div class="fallback-note">اضغط الزر للتحويل للمتجر</div>
-            <a id="open-safari" class="open-browser hidden" href="#">افتح في المتصفح ↗</a>
-        </div>
+        <a id="android-link" class="store-btn" href="market://details?id=com.PetraRide_User">
+            Google Play حمّل من
+        </a>
 
-        <!-- Phase 3: desktop both buttons -->
-        <div id="phase-both" class="hidden">
-            <p style="margin-bottom: 12px; font-size: 14px;">حمّل التطبيق</p>
-            <a id="android-link" class="store-btn" href="#">Google Play</a>
-            <a id="ios-link" class="store-btn" href="#">App Store</a>
+        <div id="help" class="help-text">
+            مش عم يفتح؟ اضغط على ⋯ فوق يمين ثم "افتح في المتصفح"
         </div>
     </div>
 
     <script>
     (function() {
-        var params = new URLSearchParams(window.location.search);
-        var campaign = params.get('c') || 'general';
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var campaign = params.get('c') || 'general';
 
-        var androidURL = 'https://play.google.com/store/apps/details?id=com.PetraRide_User'
-            + '&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D'
-            + encodeURIComponent(campaign);
+            // Update iOS link with campaign param
+            document.getElementById('ios-link').href =
+                'itms-apps://apps.apple.com/app/id1463809354?ct=' + encodeURIComponent(campaign);
 
-        // iOS: try native scheme first, fallback to https
-        var iosNative = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + encodeURIComponent(campaign);
-        var iosHTTPS  = 'https://apps.apple.com/app/id1463809354?ct=' + encodeURIComponent(campaign);
+            // Update Android link with campaign param
+            document.getElementById('android-link').href =
+                'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D'
+                + encodeURIComponent(campaign);
 
-        document.getElementById('android-link').href = androidURL;
-        document.getElementById('ios-link').href = iosHTTPS;
-
-        var ua = navigator.userAgent || navigator.vendor || window.opera;
-        var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        var isAndroid = /android/i.test(ua);
-        var isMobile = isIOS || isAndroid;
-        var isInApp = /FBAN|FBAV|Instagram|Messenger/i.test(ua);
-
-        var storeURL = isIOS ? iosHTTPS : androidURL;
-        var storeNative = isIOS ? iosNative : androidURL;
-        var storeName = isIOS ? 'App Store' : 'Google Play';
-
-        // Full page URL for "open in browser" fallback
-        var thisPageURL = window.location.href;
-
-        function fireLeadEvent() {
+            // Fire lead event
             if (typeof fbq === 'function') {
-                fbq('track', 'Lead', {
-                    content_name: (isIOS ? 'ios' : 'android') + '_store_redirect',
-                    campaign: campaign
-                });
+                fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
             }
-        }
 
-        if (isMobile) {
-            fireLeadEvent();
-
-            if (isInApp) {
-                // In-app browser mode
-                document.getElementById('phase-auto').classList.add('hidden');
-                var btn = document.getElementById('store-btn');
-                btn.textContent = 'حمّل من ' + storeName;
-                document.getElementById('phase-button').classList.remove('hidden');
-
-                var clickCount = 0;
-
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    clickCount++;
-
-                    // Attempt 1: try native scheme (itms-apps:// on iOS)
-                    if (clickCount === 1) {
-                        window.location.href = storeNative;
-
-                        // After 1.5s if still here, show fallback
-                        setTimeout(function() {
-                            // Try HTTPS version
-                            window.location.href = storeURL;
-                        }, 1500);
-
-                        // After 3s if STILL here, show "open in browser" link
-                        setTimeout(function() {
-                            var safariLink = document.getElementById('open-safari');
-                            safariLink.href = thisPageURL;
-                            safariLink.classList.remove('hidden');
-                            btn.textContent = 'جرّب مرة ثانية';
-                        }, 3000);
-                    } else {
-                        // Subsequent clicks: try all methods
-                        try { window.open(storeURL, '_system'); } catch(ex) {}
-                        window.location.href = storeNative;
-                        setTimeout(function() {
-                            window.location.href = storeURL;
-                        }, 800);
-                    }
-                });
-
-            } else {
-                // Normal mobile browser: auto-redirect
-                setTimeout(function() {
-                    window.location.href = storeNative;
-                }, 300);
-
-                setTimeout(function() {
-                    // Fallback to HTTPS if native didn't work
-                    window.location.href = storeURL;
-                }, 1500);
-
-                // Final fallback: show button
-                setTimeout(function() {
-                    document.getElementById('phase-auto').classList.add('hidden');
-                    var btn = document.getElementById('store-btn');
-                    btn.textContent = 'حمّل من ' + storeName;
-                    btn.addEventListener('click', function() {
-                        window.location.href = storeURL;
-                    });
-                    document.getElementById('phase-button').classList.remove('hidden');
-                }, 3000);
+            // Show help text if in-app browser detected
+            var ua = navigator.userAgent || '';
+            if (/FBAN|FBAV|Instagram|Messenger/i.test(ua)) {
+                document.getElementById('help').style.display = 'block';
             }
-        } else {
-            // Desktop
-            document.getElementById('phase-auto').classList.add('hidden');
-            document.getElementById('phase-both').classList.remove('hidden');
-        }
+        } catch(e) {}
     })();
     </script>
 </body>
