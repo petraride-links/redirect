@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Petra Ride - بترا رايد</title>
 
+    <!-- Smart App Banner — iOS shows native "OPEN" bar -->
+    <meta name="apple-itunes-app" content="app-id=1463809354">
+
     <!-- Meta Pixel Code -->
     <script>
     !function(f,b,e,v,n,t,s)
@@ -62,8 +65,8 @@
             font-size: 13px;
             opacity: 0.8;
             line-height: 1.8;
-            display: none;
         }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -73,21 +76,19 @@
         <div class="subtitle">حمّل التطبيق</div>
 
         <a class="store-btn" id="ios-link"
-           href="https://apps.apple.com/app/id1463809354"
-           target="_blank" rel="noopener noreferrer">
+           href="https://apps.apple.com/app/id1463809354">
             App Store حمّل من
         </a>
 
         <a class="store-btn" id="android-link"
-           href="https://play.google.com/store/apps/details?id=com.PetraRide_User"
-           target="_blank" rel="noopener noreferrer">
+           href="https://play.google.com/store/apps/details?id=com.PetraRide_User">
             Google Play حمّل من
         </a>
 
-        <div id="help" class="help-text">
+        <div id="help" class="help-text hidden">
             مش عم يفتح المتجر؟<br>
             اضغط على ⋯ فوق يمين الشاشة<br>
-            ثم اختر "فتح في المتصفح"
+            ثم اختر "فتح في Safari"
         </div>
     </div>
 
@@ -113,7 +114,27 @@
             var isAndroid = /android/i.test(ua);
             var isInApp = /FBAN|FBAV|Instagram|Messenger|Line|Snapchat/i.test(ua);
 
-            if (!isInApp) {
+            if (isInApp) {
+                // In-app browser: use location.replace on click
+                // This works better than href navigation in WebViews
+                if (isIOS) {
+                    iosEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.replace(iosHTTPS);
+                    });
+                }
+                if (isAndroid) {
+                    androidEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // Android intent:// forces system browser to handle it
+                        var intentURL = 'intent://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce
+                            + '#Intent;scheme=market;package=com.android.vending;end';
+                        window.location.replace(intentURL);
+                    });
+                }
+                document.getElementById('help').classList.remove('hidden');
+            } else {
+                // Regular browser: use native schemes
                 if (isIOS) {
                     iosEl.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -130,10 +151,7 @@
                 }
             }
 
-            if (isInApp) {
-                document.getElementById('help').style.display = 'block';
-            }
-
+            // Fire pixel
             if (typeof fbq === 'function') {
                 fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
             }
