@@ -73,12 +73,14 @@
         <div class="subtitle">حمّل التطبيق</div>
 
         <a class="store-btn" id="ios-link"
-           href="https://apps.apple.com/app/id1463809354">
+           href="https://apps.apple.com/app/id1463809354"
+           target="_blank" rel="noopener noreferrer">
             App Store حمّل من
         </a>
 
         <a class="store-btn" id="android-link"
-           href="https://play.google.com/store/apps/details?id=com.PetraRide_User">
+           href="https://play.google.com/store/apps/details?id=com.PetraRide_User"
+           target="_blank" rel="noopener noreferrer">
             Google Play حمّل من
         </a>
 
@@ -106,36 +108,32 @@
             iosEl.href = iosHTTPS;
             androidEl.href = androidHTTPS;
 
-            // On mobile: try native scheme on click, fallback stays as HTTPS href
             var ua = navigator.userAgent || '';
             var isIOS = /iPad|iPhone|iPod/.test(ua);
             var isAndroid = /android/i.test(ua);
-            var isInApp = /FBAN|FBAV|Instagram|Messenger/i.test(ua);
+            var isInApp = /FBAN|FBAV|Instagram|Messenger|Line|Snapchat/i.test(ua);
 
-            if (isIOS) {
-                iosEl.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    // Try native scheme first
-                    window.location.href = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + ce;
-                    // If still here after 1s, try HTTPS
-                    setTimeout(function() { window.location.href = iosHTTPS; }, 1000);
-                });
+            if (!isInApp) {
+                if (isIOS) {
+                    iosEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + ce;
+                        setTimeout(function() { window.location.href = iosHTTPS; }, 1000);
+                    });
+                }
+                if (isAndroid) {
+                    androidEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = 'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
+                        setTimeout(function() { window.location.href = androidHTTPS; }, 1000);
+                    });
+                }
             }
 
-            if (isAndroid) {
-                androidEl.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = 'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
-                    setTimeout(function() { window.location.href = androidHTTPS; }, 1000);
-                });
-            }
-
-            // Show help text in in-app browsers
             if (isInApp) {
                 document.getElementById('help').style.display = 'block';
             }
 
-            // Fire pixel
             if (typeof fbq === 'function') {
                 fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
             }
