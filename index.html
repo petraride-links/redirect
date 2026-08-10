@@ -40,56 +40,47 @@
             padding: 24px;
         }
         .container { max-width: 360px; width: 100%; }
-        .logo-text { font-size: 28px; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
-        .tagline { font-size: 16px; opacity: 0.85; margin-bottom: 40px; }
-        .subtitle { font-size: 15px; opacity: 0.9; margin-bottom: 20px; }
+        .logo-text { font-size: 26px; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+        .tagline { font-size: 14px; opacity: 0.85; margin-bottom: 24px; }
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status { font-size: 14px; opacity: 0.9; }
         .store-btn {
             display: block;
-            padding: 18px 24px;
-            margin: 14px auto;
+            padding: 16px 24px;
+            margin: 20px auto 0;
             max-width: 300px;
             border-radius: 14px;
             background: #fff;
             color: #0E37A6;
             text-decoration: none;
             font-weight: 700;
-            font-size: 17px;
+            font-size: 16px;
             -webkit-tap-highlight-color: transparent;
         }
         .store-btn:active { opacity: 0.85; }
-        .help-text {
-            margin-top: 30px;
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 10px;
-            font-size: 13px;
-            opacity: 0.8;
-            line-height: 1.8;
-        }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo-text">PETRA RIDE</div>
         <div class="tagline">منكم وفيكم</div>
-        <div class="subtitle">حمّل التطبيق</div>
 
-        <a class="store-btn" id="ios-link"
-           href="https://apps.apple.com/app/id1463809354">
-            App Store حمّل من
+        <div class="spinner" id="spinner"></div>
+        <div class="status" id="status">عم نوجهك للمتجر...</div>
+
+        <!-- Fallback button — only shown if auto-redirect doesn't fire (e.g. blocked by in-app browser) -->
+        <a class="store-btn hidden" id="fallback-link" href="#">
+            اضغط هون للمتابعة
         </a>
-
-        <a class="store-btn" id="android-link"
-           href="https://play.google.com/store/apps/details?id=com.PetraRide_User">
-            Google Play حمّل من
-        </a>
-
-        <div id="help" class="help-text hidden">
-            مش عم يفتح المتجر؟<br>
-            اضغط على ⋯ فوق يمين الشاشة<br>
-            ثم اختر "فتح في Safari"
-        </div>
     </div>
 
     <script>
@@ -99,63 +90,60 @@
             var campaign = params.get('c') || 'general';
             var ce = encodeURIComponent(campaign);
 
-            var iosHTTPS = 'https://apps.apple.com/app/id1463809354?ct=' + ce;
-            var androidHTTPS = 'https://play.google.com/store/apps/details?id=com.PetraRide_User'
-                + '&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
-
-            var iosEl = document.getElementById('ios-link');
-            var androidEl = document.getElementById('android-link');
-
-            iosEl.href = iosHTTPS;
-            androidEl.href = androidHTTPS;
-
             var ua = navigator.userAgent || '';
             var isIOS = /iPad|iPhone|iPod/.test(ua);
             var isAndroid = /android/i.test(ua);
             var isInApp = /FBAN|FBAV|Instagram|Messenger|Line|Snapchat/i.test(ua);
 
-            if (isInApp) {
-                // In-app browser: use location.replace on click
-                // This works better than href navigation in WebViews
-                if (isIOS) {
-                    iosEl.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.location.replace(iosHTTPS);
-                    });
-                }
-                if (isAndroid) {
-                    androidEl.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        // Android intent:// forces system browser to handle it
-                        var intentURL = 'intent://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce
-                            + '#Intent;scheme=market;package=com.android.vending;end';
-                        window.location.replace(intentURL);
-                    });
-                }
-                document.getElementById('help').classList.remove('hidden');
-            } else {
-                // Regular browser: use native schemes
-                if (isIOS) {
-                    iosEl.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.location.href = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + ce;
-                        setTimeout(function() { window.location.href = iosHTTPS; }, 1000);
-                    });
-                }
-                if (isAndroid) {
-                    androidEl.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.location.href = 'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
-                        setTimeout(function() { window.location.href = androidHTTPS; }, 1000);
-                    });
-                }
-            }
+            var iosHTTPS = 'https://apps.apple.com/app/id1463809354?ct=' + ce;
+            var androidHTTPS = 'https://play.google.com/store/apps/details?id=com.PetraRide_User'
+                + '&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
+            var androidIntent = 'intent://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce
+                + '#Intent;scheme=market;package=com.android.vending;end';
 
             // Fire pixel
             if (typeof fbq === 'function') {
                 fbq('track', 'Lead', { content_name: 'store_redirect', campaign: campaign });
             }
-        } catch(e) {}
+
+            var fallback = document.getElementById('fallback-link');
+            var status = document.getElementById('status');
+            var spinner = document.getElementById('spinner');
+
+            function showFallback(url) {
+                fallback.href = url;
+                fallback.classList.remove('hidden');
+                spinner.classList.add('hidden');
+                status.textContent = 'مش عم يفتح المتجر أوتوماتيك؟';
+            }
+
+            if (isIOS) {
+                fallback.href = iosHTTPS;
+                if (isInApp) {
+                    window.location.replace(iosHTTPS);
+                } else {
+                    window.location.href = 'itms-apps://apps.apple.com/app/id1463809354?ct=' + ce;
+                    setTimeout(function() { window.location.href = iosHTTPS; }, 800);
+                }
+                setTimeout(function() { showFallback(iosHTTPS); }, 2000);
+
+            } else if (isAndroid) {
+                fallback.href = androidHTTPS;
+                if (isInApp) {
+                    window.location.replace(androidIntent);
+                } else {
+                    window.location.href = 'market://details?id=com.PetraRide_User&referrer=utm_source%3Dfacebook%26utm_medium%3Dpaid%26utm_campaign%3D' + ce;
+                    setTimeout(function() { window.location.href = androidHTTPS; }, 800);
+                }
+                setTimeout(function() { showFallback(androidHTTPS); }, 2000);
+
+            } else {
+                spinner.classList.add('hidden');
+                status.textContent = 'افتح هاد الرابط من موبايلك';
+            }
+        } catch(e) {
+            document.getElementById('status').textContent = 'صار خطأ، جرب مرة ثانية';
+        }
     })();
     </script>
 </body>
