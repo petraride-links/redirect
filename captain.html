@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Petra Safeer — بترا رايد</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:#043CA1;color:#F9F9F9;font-family:Montserrat,Arial,sans-serif;text-align:center}
+  .box{padding:32px}
+  h1{font-size:22px;margin:0 0 24px}
+  a.btn{display:block;margin:12px auto;max-width:260px;padding:14px 20px;border-radius:30px;
+        background:#EC7C01;color:#fff;text-decoration:none;font-weight:700}
+</style>
+</head>
+<body>
+<div class="box" id="fallback" style="display:none">
+  <h1>حمّل تطبيق Petra Safeer</h1>
+  <a class="btn" id="ios" href="#">App Store</a>
+  <a class="btn" id="android" href="#">Google Play</a>
+</div>
+<script>
+  var tag = (new URLSearchParams(location.search).get('c') || 'direct').replace(/[^A-Za-z0-9_-]/g, '');
+  var ANDROID = 'https://play.google.com/store/apps/details?id=com.PetraRide_Captain&referrer=' +
+                encodeURIComponent('utm_source=facebook&utm_medium=paid&utm_campaign=' + tag);
+  var IOS = 'https://apps.apple.com/jo/app/petra-safeer/id6736875690?ct=' + encodeURIComponent(tag);
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
+  if (isIOS) { location.replace(IOS); }
+  else if (isAndroid) { location.replace(ANDROID); }
+  else {
+    document.getElementById('ios').href = IOS;
+    document.getElementById('android').href = ANDROID;
+    document.getElementById('fallback').style.display = 'block';
+  }
+</script>
+</body>
+</html>
